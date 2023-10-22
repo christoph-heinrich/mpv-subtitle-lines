@@ -1,3 +1,12 @@
+-- subtitle-lines 1.0.0 - 2023-Oct-22
+-- https://github.com/christoph-heinrich/mpv-subtitle-lines
+--
+-- List and search subtitle lines of the selected subtitle track.
+--
+-- Usage:
+-- add bindings to input.conf:
+-- Ctrl+f script-binding subtitle_lines/list_subtitles
+
 local mp = require 'mp'
 local utils = require 'mp.utils'
 local script_name = mp.get_script_name()
