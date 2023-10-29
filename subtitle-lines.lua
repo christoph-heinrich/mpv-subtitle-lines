@@ -160,19 +160,33 @@ local function show_subtitle_list(subtitles)
         }
     }
 
+    local last_started_index = nil
+    local last_active_index = nil
     local time = mp.get_property_number('time-pos')
-    for _, subtitle in ipairs(subtitles) do
-        menu.items[#menu.items + 1] = {
+    for i, subtitle in ipairs(subtitles) do
+        local has_started = subtitle.start <= time
+        local has_ended = subtitle.stop < time
+        local is_active = has_started and not has_ended
+        menu.items[i] = {
             title = subtitle.line,
             hint = mp.format_time(subtitle.start) .. '-' .. mp.format_time(subtitle.stop),
-            active = subtitle.start <= time and time <= subtitle.stop,
+            active = is_active,
             value = {
                 'seek',
                 subtitle.start,
                 'absolute+exact',
             }
         }
+        if has_started then
+            last_started_index = i
+        end
+        if is_active then
+            last_active_index = i
+        end
     end
+    menu.selected_index = last_active_index or
+        last_started_index and subtitles[last_started_index + 1] and last_started_index + 1 or
+        last_started_index
 
     local json = utils.format_json(menu)
     if menu_open then mp.commandv('script-message-to', 'uosc', 'update-menu', json)
