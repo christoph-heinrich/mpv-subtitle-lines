@@ -34,7 +34,7 @@ local function get_current_subtitle()
 end
 
 local function same_time(t1, t2)
-    return math.abs(t1 - t2) < 0.01
+    return math.abs(t1 - t2) < 0.02
 end
 
 ---Merge lines with already collected subtitles
