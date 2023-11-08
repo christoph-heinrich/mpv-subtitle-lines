@@ -11,6 +11,9 @@ local mp = require 'mp'
 local utils = require 'mp.utils'
 local script_name = mp.get_script_name()
 
+-- https://github.com/mpv-player/mpv/blob/a5c32ea52e6f943a4221f6f18239510502d9b3e4/sub/sd.h#L13
+local SUB_SEEK_OFFSET = 0.01
+
 -- split str into a table
 -- example: local t = split(s, "\n")
 -- plain: whether pat is a plain string (default false - pat is a pattern)
@@ -34,7 +37,8 @@ local function get_current_subtitle()
 end
 
 local function same_time(t1, t2)
-    return math.abs(t1 - t2) < 0.02
+    -- misses some merges if offset isn't doubled (0.012 already works in testing)
+    return math.abs(t1 - t2) < SUB_SEEK_OFFSET * 2
 end
 
 ---Merge lines with already collected subtitles
@@ -162,7 +166,7 @@ local function show_subtitle_list(subtitles)
 
     local last_started_index = nil
     local last_active_index = nil
-    local time = mp.get_property_number('time-pos')
+    local time = mp.get_property_number('time-pos') + SUB_SEEK_OFFSET
     for i, subtitle in ipairs(subtitles) do
         local has_started = subtitle.start <= time
         local has_ended = subtitle.stop < time
