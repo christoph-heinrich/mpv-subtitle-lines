@@ -42,6 +42,5 @@ Unfortunately the audio track doesn't always have a language set, in which case 
 
 * Only lists subtitles that mpv has loaded internally.
 * After seeking mpv only provides the current subtitle line and requires some (short) playback for the other lines to become available.
-* Acquiring subtitle lines isn't 100% accurate.
 
-Resolving those requires changes to mpv or external tools.
+Resolving those requires changes to mpv or the use of external tools.
