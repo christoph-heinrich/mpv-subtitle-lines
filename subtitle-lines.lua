@@ -164,7 +164,7 @@ local function show_subtitle_list(subtitles)
         }
     }
 
-    local last_started_index = nil
+    local last_started_index = 0
     local last_active_index = nil
     local time = mp.get_property_number('time-pos') + SUB_SEEK_OFFSET
     for i, subtitle in ipairs(subtitles) do
