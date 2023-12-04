@@ -81,18 +81,17 @@ local function acquire_subtitles()
     mp.commandv('sub-step', -1, 'primary')
 
     -- find first one
-    local start_time = mp.get_property_number('sub-start')
-    local old_start_time = start_time
-    local retry = 0
+    local retry_delay = sub_delay
     -- if we're not at the very beginning
     -- this missies the first subtitle for some reason
-    repeat
+    while true do
         mp.commandv('sub-step', -1, 'primary')
-        old_start_time = start_time
-        start_time = mp.get_property_number('sub-start')
-        if old_start_time == start_time then retry = retry + 1
-        else retry = 0 end
-    until retry > 10
+        local delay = mp.get_property_number('sub-delay')
+        if retry_delay == delay then
+            break
+        end
+        retry_delay = delay
+    end
 
     ---@type {start:number;stop:number;line:string}[]
     local subtitles = {}
@@ -101,8 +100,8 @@ local function acquire_subtitles()
     local prev_stop = -1
     local prev_text = nil
 
-    retry = 0
-    repeat
+    retry_delay = nil
+    while true do
         local start, stop, text, lines = get_current_subtitle()
         mp.commandv('sub-step', 1, 'primary')
         if start and (text ~= prev_text or not same_time(start, prev_start) or not same_time(stop, prev_stop)) then
@@ -122,11 +121,14 @@ local function acquire_subtitles()
             prev_start = start
             prev_stop = stop
             prev_text = text
-            retry = 0
         else
-            retry = retry + 1
+            local delay = mp.get_property_number('sub-delay')
+            if retry_delay == delay then
+                break
+            end
+            retry_delay = delay
         end
-    until retry > 10
+    end
 
     mp.set_property_number('sub-delay', sub_delay)
     mp.set_property_bool('sub-visibility', sub_visibility)
