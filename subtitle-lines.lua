@@ -40,7 +40,6 @@ local function same_time(t1, t2)
     -- misses some merges if offset isn't doubled (0.012 already works in testing)
     return math.abs(t1 - t2) < SUB_SEEK_OFFSET * 2
 end
-
 ---Merge lines with already collected subtitles
 ---returns lines that haven't been merged
 ---@param subtitles {start:number;stop:number;line:string}[]
@@ -59,19 +58,14 @@ local function merge_subtitle_lines(subtitles, start, stop, lines)
     end
 
     -- merge identical lines that are right after each other
-    local merged_line_pos = {}
     for _, subtitle in ipairs(subtitles) do
         if same_time(subtitle.stop, start) then
-            for l, line in ipairs(lines) do
-                if line == subtitle.line then
-                    merged_line_pos[#merged_line_pos + 1] = l
+            for i = #lines, 1, -1 do
+                if lines[i] == subtitle.line then
+                    table.remove(lines, i)
                     if start < subtitle.start then subtitle.start = start end
                     if stop > subtitle.stop then subtitle.stop = stop end
                 end
-            end
-            for j = #merged_line_pos, 1, -1 do
-                table.remove(lines, merged_line_pos[j])
-                merged_line_pos[j] = nil
             end
         end
     end
@@ -222,13 +216,8 @@ mp.add_key_binding(nil, 'list_subtitles', function()
         mp.commandv('script-message-to', 'uosc', 'close-menu', 'subtitle-lines-list')
         return
     end
-
     show_loading_indicator()
-
-    if not subtitles or true then
-        subtitles = acquire_subtitles()
-    end
-
+    subtitles = acquire_subtitles()
     mp.observe_property('sub-text', 'string', sub_text_update)
 end)
 
