@@ -49,6 +49,15 @@ end
 ---@param lines string[]
 ---@return string[]
 local function merge_subtitle_lines(subtitles, start, stop, lines)
+    -- remove duplicates in the current lines
+    for i = 1, #lines do
+        for j = #lines, i + 1, -1 do
+            if lines[i] == lines[j] then
+                table.remove(lines, j)
+            end
+        end
+    end
+
     -- merge identical lines that are right after each other
     local merged_line_pos = {}
     for _, subtitle in ipairs(subtitles) do
