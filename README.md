@@ -13,6 +13,7 @@ Requires [uosc](https://github.com/tomasklaen/uosc) 5.0.0 or newer.
 2. Set key bindings in [`input.conf`](https://mpv.io/manual/stable/#input-conf)
     ```
     Ctrl+f script-binding subtitle_lines/list_subtitles
+    Ctrl+F script-binding subtitle_lines/list_secondary_subtitles
     ```
 
 ## Recommended usage
