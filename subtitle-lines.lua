@@ -50,6 +50,8 @@ local sub_strings_available = {
     }
 }
 
+---@alias Subtitle {start:number;stop:number;line:string}
+
 local sub_strings = sub_strings_available.primary
 local function get_current_subtitle_lines()
     local start = mp.get_property_number(sub_strings.start)
@@ -66,7 +68,7 @@ end
 
 ---Merge lines with already collected subtitles
 ---returns lines that haven't been merged
----@param subtitles {start:number;stop:number;line:string}[]
+---@param subtitles Subtitle[]
 ---@param start number
 ---@param stop number
 ---@param lines string[]
@@ -89,7 +91,7 @@ end
 
 ---Fix end time of already collected subtitles and finds the currect start time
 ---for current lines
----@param subtitles {start:number;stop:number;line:string}[]
+---@param subtitles Subtitle[]
 ---@param prev_lines string[]
 ---@param lines string[]
 ---@param start number
@@ -124,7 +126,7 @@ local function fix_line_timing(subtitles, prev_lines, lines, start, start_approx
 end
 
 ---Get lines form current subtitle track
----@return {start:number;stop:number;line:string}[]
+---@return Subtitle[]
 local function acquire_subtitles()
     local sub_delay = mp.get_property_number(sub_strings.delay)
     local sub_visibility = mp.get_property_bool(sub_strings.visibility)
@@ -146,7 +148,7 @@ local function acquire_subtitles()
         retry_delay = delay
     end
 
-    ---@type {start:number;stop:number;line:string}[]
+    ---@type Subtitle[]
     local subtitles = {}
     local i = 0
     local prev_start = -1
@@ -273,7 +275,7 @@ local function show_subtitle_list(subtitles)
 end
 
 
----@type {start:number;stop:number;line:string}[]|nil
+---@type Subtitle[]|nil
 local subtitles = nil
 
 local function sub_text_update()
