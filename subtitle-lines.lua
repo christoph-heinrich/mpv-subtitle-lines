@@ -95,13 +95,16 @@ end
 ---@param prev_lines string[]
 ---@param lines string[]
 ---@param start number
----@param start_approx number
+---@param prev_start number
 ---@return number
-local function fix_line_timing(subtitles, prev_lines, lines, start, start_approx)
+local function fix_line_timing(subtitles, prev_lines, lines, start, prev_start)
     -- detect subtitles appearing after their reported sub-start time
-    -- 0.1s tolarance to avoid false positives
-    if start_approx - start > 0.1 then
-        start = start_approx
+    if start == prev_start then
+        local start_approx = mp.get_property_number('time-pos', 0) - mp.get_property_number(sub_strings.delay) - SUB_SEEK_OFFSET
+        -- 0.1s tolarance to avoid false positives
+        if start_approx - start > 0.1 then
+            start = start_approx
+        end
     end
     -- detect subtitle lines disappearing before their reported sub-end time.
     for j = #prev_lines, 1, -1 do
@@ -158,12 +161,8 @@ local function acquire_subtitles()
 
     retry_delay = nil
     while true do
-        local start_approx = mp.get_property_number('time-pos', 0) - mp.get_property_number(sub_strings.delay) - SUB_SEEK_OFFSET
         local start, stop, text, lines = get_current_subtitle_lines()
         if start and (text ~= prev_text or not same_time(start, prev_start) or not same_time(stop, prev_stop)) then
-            prev_start = start
-            prev_stop = stop
-            prev_text = text
             -- remove empty lines
             for j = #lines, 1, -1 do
                 if not lines[j]:find('[^%s]') then
@@ -182,16 +181,16 @@ local function acquire_subtitles()
             ---mpv reports the earliest sub-start and the latest sub-end of all
             ---current lines, so a line that's there for a long time
             ---can mess up the timing of all other current lines
-            start = fix_line_timing(subtitles, prev_lines, lines, start, start_approx)
+            local start_fixed = fix_line_timing(subtitles, prev_lines, lines, start, prev_start)
             for j, line in ipairs(lines) do
                 prev_lines[j] = line
             end
 
             if #lines > 0 then
-                lines = merge_subtitle_lines(subtitles, start, stop, lines)
+                lines = merge_subtitle_lines(subtitles, start_fixed, stop, lines)
                 for _, line in ipairs(lines) do
                     i = i + 1
-                    subtitles[i] = { start = start, stop = stop, line = line }
+                    subtitles[i] = { start = start_fixed, stop = stop, line = line }
                 end
             end
         else
@@ -201,6 +200,9 @@ local function acquire_subtitles()
             end
             retry_delay = delay
         end
+        prev_start = start
+        prev_stop = stop
+        prev_text = text
         mp.commandv('sub-step', 1, sub_strings.step)
     end
 
