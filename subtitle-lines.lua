@@ -67,7 +67,7 @@ local function same_time(t1, t2)
 end
 
 ---Merge lines with already collected subtitles
----returns lines that haven't been merged
+---removes merged lines from the lines array
 ---@param subtitles Subtitle[]
 ---@param start number
 ---@param stop number
@@ -123,7 +123,6 @@ local function fix_line_timing(subtitles, prev_lines, lines, start, prev_start)
                 break
             end
         end
-        prev_lines[j] = nil
     end
     return start
 end
@@ -182,16 +181,18 @@ local function acquire_subtitles()
             ---current lines, so a line that's there for a long time
             ---can mess up the timing of all other current lines
             local start_fixed = fix_line_timing(subtitles, prev_lines, lines, start, prev_start)
+
+            for j = #prev_lines, 1, -1 do
+                prev_lines[j] = nil
+            end
             for j, line in ipairs(lines) do
                 prev_lines[j] = line
             end
 
-            if #lines > 0 then
-                lines = merge_subtitle_lines(subtitles, start_fixed, stop, lines)
-                for _, line in ipairs(lines) do
-                    i = i + 1
-                    subtitles[i] = { start = start_fixed, stop = stop, line = line }
-                end
+            merge_subtitle_lines(subtitles, start_fixed, stop, lines)
+            for _, line in ipairs(lines) do
+                i = i + 1
+                subtitles[i] = { start = start_fixed, stop = stop, line = line }
             end
         else
             local delay = mp.get_property_number(sub_strings.delay)
