@@ -157,7 +157,7 @@ local function acquire_subtitles()
     retry_delay = nil
     while true do
         local start, stop, text, lines = get_current_subtitle_lines()
-        if start and (text ~= prev_text or not same_time(start, prev_start) or not same_time(stop, prev_stop)) then
+        if start and stop and text and (text ~= prev_text or start ~= prev_start or stop ~= prev_stop) then
             -- remove empty lines
             for j = #lines, 1, -1 do
                 if not lines[j]:find('[^%s]') then
