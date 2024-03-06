@@ -50,7 +50,7 @@ local sub_strings_available = {
     }
 }
 
----@alias Subtitle {start:number;stop:number;line:string}
+---@alias Subtitle {start:number;stop:number;line:string;timespan:string}
 
 local sub_strings = sub_strings_available.primary
 local function get_current_subtitle_lines()
@@ -209,6 +209,11 @@ local function acquire_subtitles()
 
     mp.set_property_number(sub_strings.delay, sub_delay)
     mp.set_property_bool(sub_strings.visibility, sub_visibility)
+
+    for _, subtitle in ipairs(subtitles) do
+        subtitle.timespan = mp.format_time(subtitle.start) .. '-' .. mp.format_time(subtitle.stop)
+    end
+
     return subtitles
 end
 
@@ -252,7 +257,7 @@ local function show_subtitle_list(subtitles)
         local is_active = has_started and not has_ended
         menu.items[i] = {
             title = subtitle.line,
-            hint = mp.format_time(subtitle.start) .. '-' .. mp.format_time(subtitle.stop),
+            hint = subtitle.timespan,
             active = is_active,
             value = {
                 'seek',
