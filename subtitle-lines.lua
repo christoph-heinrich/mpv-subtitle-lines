@@ -12,6 +12,11 @@ local mp = require 'mp'
 local utils = require 'mp.utils'
 local script_name = mp.get_script_name()
 
+local opts = {
+    seek_offset = -5
+}
+(require 'mp.options').read_options(opts, script_name, function() end)
+
 -- https://github.com/mpv-player/mpv/blob/a5c32ea52e6f943a4221f6f18239510502d9b3e4/sub/sd.h#L13
 local SUB_SEEK_OFFSET = 0.01
 
@@ -248,6 +253,7 @@ local function show_subtitle_list(subtitles)
         }
     }
 
+    local seek_offset = opts.seek_offset
     local last_started_index = 0
     local last_active_index = nil
     local time = mp.get_property_number('time-pos', 0) + SUB_SEEK_OFFSET
@@ -261,7 +267,7 @@ local function show_subtitle_list(subtitles)
             active = is_active,
             value = {
                 'seek',
-                subtitle.start,
+                math.max(0, subtitle.start + seek_offset),
                 'absolute+exact',
             }
         }
