@@ -250,7 +250,8 @@ local function show_subtitle_list(subtitles)
             'script-message-to',
             script_name,
             'uosc-menu-closed',
-        }
+        },
+        callback = { mp.get_script_name(), 'menu-event' },
     }
 
     local seek_offset = opts.seek_offset
@@ -265,11 +266,7 @@ local function show_subtitle_list(subtitles)
             title = subtitle.line,
             hint = subtitle.timespan,
             active = is_active,
-            value = {
-                'seek',
-                math.max(0, subtitle.start + seek_offset),
-                'absolute+exact',
-            }
+            value = tostring(math.max(0, subtitle.start + seek_offset)),
         }
         if has_started then
             last_started_index = i
@@ -325,6 +322,16 @@ mp.register_script_message('uosc-menu-closed', function()
     subtitles = nil
     menu_open = false
     mp.unobserve_property(sub_text_update)
+end)
+
+mp.register_script_message('menu-event', function(json)
+    local event = utils.parse_json(json)
+    if event.type == 'activate' then
+        mp.commandv('seek', event.value, 'absolute+exact')
+        if not event.shift then
+            close_menu()
+        end
+    end
 end)
 
 mp.register_event('start-file', function()
