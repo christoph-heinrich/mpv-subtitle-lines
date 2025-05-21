@@ -1,4 +1,4 @@
--- subtitle-lines 1.1.1 - 2024-Mar-08
+-- subtitle-lines 1.2.0 - 2025-May-21
 -- https://github.com/christoph-heinrich/mpv-subtitle-lines
 --
 -- List and search subtitle lines of the selected subtitle track.
