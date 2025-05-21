@@ -6,7 +6,7 @@ Select a line to seek to it's start time.
 
 ![screenshot](preview.jpg)
 
-Requires [uosc](https://github.com/tomasklaen/uosc) 5.0.0 or newer.
+Requires [uosc](https://github.com/tomasklaen/uosc) 5.4.0 or newer.
 
 ## Installation
 1. Save the `subtitle-lines.lua` into your [scripts directory](https://mpv.io/manual/stable/#script-location)
