@@ -288,6 +288,9 @@ local function show_subtitle_list(subtitles)
     menu_open = true
 end
 
+local function close_menu()
+    mp.commandv('script-message-to', 'uosc', 'close-menu', 'subtitle-lines-list')
+end
 
 ---@type Subtitle[]|nil
 local subtitles = nil
@@ -298,7 +301,7 @@ end
 
 mp.add_key_binding(nil, 'list_subtitles', function()
     if menu_open then
-        mp.commandv('script-message-to', 'uosc', 'close-menu', 'subtitle-lines-list')
+        close_menu()
         return
     end
     sub_strings = sub_strings_available.primary
@@ -309,7 +312,7 @@ end)
 
 mp.add_key_binding(nil, 'list_secondary_subtitles', function()
     if menu_open then
-        mp.commandv('script-message-to', 'uosc', 'close-menu', 'subtitle-lines-list')
+        close_menu()
         return
     end
     sub_strings = sub_strings_available.secondary
@@ -325,9 +328,9 @@ mp.register_script_message('uosc-menu-closed', function()
 end)
 
 mp.register_event('start-file', function()
-    mp.commandv('script-message-to', 'uosc', 'close-menu', 'subtitle-lines-list')
+    close_menu()
 end)
 
 mp.register_event('end-file', function()
-    mp.commandv('script-message-to', 'uosc', 'close-menu', 'subtitle-lines-list')
+    close_menu()
 end)
