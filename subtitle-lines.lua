@@ -36,6 +36,7 @@ end
 
 local sub_strings_available = {
     primary = {
+        lines = 'sub-lines',
         text = 'sub-text',
         start = 'sub-start',
         ['end'] = 'sub-end',
@@ -45,6 +46,7 @@ local sub_strings_available = {
         title = 'Subtitle lines',
     },
     secondary = {
+        lines = 'secondary-sub-lines',
         text = 'secondary-sub-text',
         start = 'secondary-sub-start',
         ['end'] = 'secondary-sub-end',
@@ -103,12 +105,10 @@ end
 ---@return number
 local function fix_line_timing(prev_subs_visible, lines, start, prev_start)
     -- detect subtitles appearing after their reported sub-start time
-    if start == prev_start then
-        local start_approx = mp.get_property_number('time-pos', 0) - mp.get_property_number(sub_strings.delay) - SUB_SEEK_OFFSET
-        -- 0.1s tolarance to avoid false positives
-        if start_approx - start > 0.1 then
-            start = start_approx
-        end
+    local start_approx = mp.get_property_number('time-pos', 0) - mp.get_property_number(sub_strings.delay) - SUB_SEEK_OFFSET
+    -- 0.1s tolarance to avoid false positives
+    if start_approx - start > 0.1 then
+        start = start_approx
     end
     for _, subtitle in ipairs(prev_subs_visible) do
         if subtitle.stop > start then
@@ -130,90 +130,107 @@ end
 ---Get lines form current subtitle track
 ---@return Subtitle[]
 local function acquire_subtitles()
-    local sub_delay = mp.get_property_number(sub_strings.delay)
-    local sub_visibility = mp.get_property_bool(sub_strings.visibility)
-    mp.set_property_bool(sub_strings.visibility, false)
-
-    -- go to the first subtitle line
-    mp.commandv('set', sub_strings.delay, mp.get_property_number('duration', 0) + 365 * 24 * 60 * 60)
-    mp.commandv('sub-step', 1, sub_strings.step)
-
-    -- this shouldn't be necessary, but it's kept just in case there actually
-    -- are subtitles further in the past then the huge delay used above
-    local retry_delay = sub_delay
-    while true do
-        mp.commandv('sub-step', -1, sub_strings.step)
-        local delay = mp.get_property_number(sub_strings.delay)
-        if retry_delay == delay then
-            break
-        end
-        retry_delay = delay
-    end
-
     ---@type Subtitle[]
     local subtitles = {}
-    local i = 0
-    local prev_start = -1
-    local prev_stop = -1
-    local prev_text = nil
-    ---@type Subtitle[]
-    local prev_subs_visible = {}
-
-    retry_delay = nil
-    while true do
-        local start, stop, text, lines = get_current_subtitle_lines()
-        if start and stop and text and (text ~= prev_text or start ~= prev_start or stop ~= prev_stop) then
-            -- remove empty lines
-            for j = #lines, 1, -1 do
-                if not lines[j]:find('[^%s]') then
-                    table.remove(lines, j)
-                end
-            end
-            -- remove duplicates in the current lines
-            for j = 1, #lines do
-                for k = #lines, j + 1, -1 do
-                    if lines[j] == lines[k] then
-                        table.remove(lines, k)
-                    end
-                end
-            end
-
-            ---mpv reports the earliest sub-start and the latest sub-end of all
-            ---current lines, so a line that's there for a long time
-            ---can mess up the timing of all other current lines
-            local start_fixed = fix_line_timing(prev_subs_visible, lines, start, prev_start)
-
-            merge_subtitle_lines(prev_subs_visible, start_fixed, stop, lines)
-
-            for j = #prev_subs_visible, 1, -1 do
-                if prev_subs_visible[j].stop <= start_fixed then
-                    table.remove(prev_subs_visible, j)
-                end
-            end
-
-            local j = #prev_subs_visible
-            for _, line in ipairs(lines) do
+    ---@type {start:number;end:number;text:string}|nil
+    local lines = mp.get_property_native("sub-lines")
+    if lines then
+        local i = 1
+        for _, sub_line in ipairs(lines) do
+            for _, line in ipairs(split(sub_line.text, '%s*\n%s*', false)) do
+                subtitles[i] = {
+                    start = sub_line.start,
+                    stop = sub_line['end'],
+                    line = line,
+                }
                 i = i + 1
-                j = j + 1
-                local subtitle = { start = start_fixed, stop = stop, line = line }
-                subtitles[i] = subtitle
-                prev_subs_visible[j] = subtitle
             end
-        else
+        end
+    else
+        local sub_delay = mp.get_property_number(sub_strings.delay)
+        local sub_visibility = mp.get_property_bool(sub_strings.visibility)
+        mp.set_property_bool(sub_strings.visibility, false)
+
+        -- go to the first subtitle line
+        mp.commandv('set', sub_strings.delay, mp.get_property_number('duration', 0) + 365 * 24 * 60 * 60)
+        mp.commandv('sub-step', 1, sub_strings.step)
+
+        -- this shouldn't be necessary, but it's kept just in case there actually
+        -- are subtitles further in the past then the huge delay used above
+        local retry_delay = sub_delay
+        while true do
+            mp.commandv('sub-step', -1, sub_strings.step)
             local delay = mp.get_property_number(sub_strings.delay)
             if retry_delay == delay then
                 break
             end
             retry_delay = delay
         end
-        prev_start = start
-        prev_stop = stop
-        prev_text = text
-        mp.commandv('sub-step', 1, sub_strings.step)
-    end
 
-    mp.set_property_number(sub_strings.delay, sub_delay)
-    mp.set_property_bool(sub_strings.visibility, sub_visibility)
+        local i = 0
+        local prev_start = -1
+        local prev_stop = -1
+        local prev_text = nil
+        ---@type Subtitle[]
+        local prev_subs_visible = {}
+
+        retry_delay = nil
+        while true do
+            local start, stop, text, lines = get_current_subtitle_lines()
+            -- print(start, stop, text)
+            if start and stop and text and (text ~= prev_text or start ~= prev_start or stop ~= prev_stop) then
+                -- remove empty lines
+                for j = #lines, 1, -1 do
+                    if not lines[j]:find('[^%s]') then
+                        table.remove(lines, j)
+                    end
+                end
+                -- remove duplicates in the current lines
+                for j = 1, #lines do
+                    for k = #lines, j + 1, -1 do
+                        if lines[j] == lines[k] then
+                            table.remove(lines, k)
+                        end
+                    end
+                end
+
+                ---mpv reports the earliest sub-start and the latest sub-end of all
+                ---current lines, so a line that's there for a long time
+                ---can mess up the timing of all other current lines
+                local start_fixed = fix_line_timing(prev_subs_visible, lines, start, prev_start)
+
+                merge_subtitle_lines(prev_subs_visible, start_fixed, stop, lines)
+
+                for j = #prev_subs_visible, 1, -1 do
+                    if prev_subs_visible[j].stop <= start_fixed then
+                        table.remove(prev_subs_visible, j)
+                    end
+                end
+
+                local j = #prev_subs_visible
+                for _, line in ipairs(lines) do
+                    i = i + 1
+                    j = j + 1
+                    local subtitle = { start = start_fixed, stop = stop, line = line }
+                    subtitles[i] = subtitle
+                    prev_subs_visible[j] = subtitle
+                end
+            else
+                local delay = mp.get_property_number(sub_strings.delay)
+                if retry_delay == delay then
+                    break
+                end
+                retry_delay = delay
+            end
+            prev_start = start
+            prev_stop = stop
+            prev_text = text
+            mp.commandv('sub-step', 1, sub_strings.step)
+        end
+
+        mp.set_property_number(sub_strings.delay, sub_delay)
+        mp.set_property_bool(sub_strings.visibility, sub_visibility)
+    end
 
     for _, subtitle in ipairs(subtitles) do
         subtitle.timespan = mp.format_time(subtitle.start) .. '-' .. mp.format_time(subtitle.stop)
