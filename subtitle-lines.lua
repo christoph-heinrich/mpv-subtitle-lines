@@ -133,7 +133,7 @@ local function acquire_subtitles()
     ---@type Subtitle[]
     local subtitles = {}
     ---@type {start:number;end:number;text:string}|nil
-    local lines = mp.get_property_native("sub-lines")
+    local lines = mp.get_property_native(sub_strings.lines)
     if lines then
         local i = 1
         for _, sub_line in ipairs(lines) do
