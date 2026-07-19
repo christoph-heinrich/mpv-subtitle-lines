@@ -137,11 +137,15 @@ local function acquire_subtitles()
     if lines then
         local i = 1
         for _, sub_line in ipairs(lines) do
+            local start = sub_line.start
+            local stop = sub_line['end']
+            local timespan = mp.format_time(start) .. '-' .. mp.format_time(stop)
             for _, line in ipairs(split(sub_line.text, '%s*\n%s*', false)) do
                 subtitles[i] = {
-                    start = sub_line.start,
-                    stop = sub_line['end'],
+                    start = start,
+                    stop = stop,
                     line = line,
+                    timespan = timespan,
                 }
                 i = i + 1
             end
@@ -211,7 +215,12 @@ local function acquire_subtitles()
                 for _, line in ipairs(lines) do
                     i = i + 1
                     j = j + 1
-                    local subtitle = { start = start_fixed, stop = stop, line = line }
+                    local subtitle = {
+                        start = start_fixed,
+                        stop = stop,
+                        line = line,
+                        timespan = mp.format_time(start_fixed) .. '-' .. mp.format_time(stop)
+                    }
                     subtitles[i] = subtitle
                     prev_subs_visible[j] = subtitle
                 end
@@ -230,10 +239,6 @@ local function acquire_subtitles()
 
         mp.set_property_number(sub_strings.delay, sub_delay)
         mp.set_property_bool(sub_strings.visibility, sub_visibility)
-    end
-
-    for _, subtitle in ipairs(subtitles) do
-        subtitle.timespan = mp.format_time(subtitle.start) .. '-' .. mp.format_time(subtitle.stop)
     end
 
     return subtitles
