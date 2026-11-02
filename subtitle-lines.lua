@@ -132,13 +132,14 @@ end
 local function acquire_subtitles()
     ---@type Subtitle[]
     local subtitles = {}
+    local sub_delay = mp.get_property_number(sub_strings.delay)
     ---@type {start:number;end:number;text:string}|nil
     local lines = mp.get_property_native(sub_strings.lines)
     if lines then
         local i = 1
         for _, sub_line in ipairs(lines) do
-            local start = sub_line.start
-            local stop = sub_line['end']
+            local start = sub_line.start + sub_delay
+            local stop = sub_line['end'] + sub_delay
             local timespan = mp.format_time(start) .. '-' .. mp.format_time(stop)
             for _, line in ipairs(split(sub_line.text, '%s*\n%s*', false)) do
                 subtitles[i] = {
@@ -151,7 +152,6 @@ local function acquire_subtitles()
             end
         end
     else
-        local sub_delay = mp.get_property_number(sub_strings.delay)
         local sub_visibility = mp.get_property_bool(sub_strings.visibility)
         mp.set_property_bool(sub_strings.visibility, false)
 
@@ -172,8 +172,8 @@ local function acquire_subtitles()
         end
 
         local i = 0
-        local prev_start = -1
-        local prev_stop = -1
+        local prev_start = -1 + sub_delay
+        local prev_stop = -1 + sub_delay
         local prev_text = nil
         ---@type Subtitle[]
         local prev_subs_visible = {}
@@ -181,6 +181,8 @@ local function acquire_subtitles()
         retry_delay = nil
         while true do
             local start, stop, text, lines = get_current_subtitle_lines()
+            start = start + sub_delay
+            stop = stop + sub_delay
             -- print(start, stop, text)
             if start and stop and text and (text ~= prev_text or start ~= prev_start or stop ~= prev_stop) then
                 -- remove empty lines
