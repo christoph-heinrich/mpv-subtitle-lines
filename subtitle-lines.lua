@@ -36,6 +36,7 @@ end
 
 local sub_strings_available = {
     primary = {
+        id = 'sid',
         lines = 'sub-lines',
         text = 'sub-text',
         start = 'sub-start',
@@ -46,6 +47,7 @@ local sub_strings_available = {
         title = 'Subtitle lines',
     },
     secondary = {
+        id = 'secondary-sid',
         lines = 'secondary-sub-lines',
         text = 'secondary-sub-text',
         start = 'secondary-sub-start',
@@ -132,6 +134,9 @@ end
 local function acquire_subtitles()
     ---@type Subtitle[]
     local subtitles = {}
+    if not mp.get_property_number(sub_strings.id) then
+        return subtitles
+    end
     local sub_delay = mp.get_property_number(sub_strings.delay)
     ---@type {start:number;end:number;text:string}|nil
     local lines = mp.get_property_native(sub_strings.lines)
